@@ -11,14 +11,15 @@ export function Welcome() {
    
   //  Hooks
    const dispatch = useDispatch();
-
+  
+  //   + handler
    const handleIncreament = (amount : number) => {
       
     dispatch( increament(amount)  )
 
    }
-
-
+ 
+  //  - handler
     const handledecreament = () => {
       
     dispatch( decreament()  )
