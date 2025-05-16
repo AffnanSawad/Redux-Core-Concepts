@@ -339,6 +339,11 @@ export const store = configureStore({
     counter: counterReducer
   },
 })
+
+
+export type RootState = ReturnType<typeof store.getState>
+
+export type AppDispatch = typeof store.dispatch
 ```
 
 ---
@@ -474,6 +479,342 @@ export function Welcome() {
 | `createSlice()`    | Reducer + Action একসাথে বানায় |
 | `useSelector()`    | Store থেকে ডেটা নেয়           |
 | `useDispatch()`    | Action পাঠায় (dispatch করে)   |
+
+---
+
+
+## ✅ **Pure Function (পরিষ্কার ফাংশন)**
+
+### 🔹 সংজ্ঞা:
+
+যে ফাংশন **একই input দিলে সবসময় একই output দেয়**, এবং **বাইরের কিছু পরিবর্তন করে না**, তাকে **pure function** বলে।
+
+### 🎯 বৈশিষ্ট্য:
+
+* Side effect নেই (console.log, DOM পরিবর্তন, API call ইত্যাদি করে না)
+* Same input → Same output
+* Predictable এবং test করা সহজ
+
+### 🧪 Example:
+
+```js
+function add(a, b) {
+  return a + b;
+}
+```
+
+✅ `add(2, 3)` সবসময় 5 দিবে — কোনো বাইরের জিনিসে নির্ভর করে না।
+
+---
+
+## ❌ **Impure Function (অপরিষ্কার ফাংশন)**
+
+### 🔹 সংজ্ঞা:
+
+যে ফাংশন একই input দিলেও কখনো কখনো ভিন্ন output দিতে পারে, অথবা বাইরের কোন state পরিবর্তন করে — তাকে **impure function** বলে।
+
+### 🎯 বৈশিষ্ট্য:
+
+* Side effect আছে
+* Predictable না
+* Test করা কঠিন
+
+### 🧪 Example:
+
+```js
+let x = 5;
+function addToX(a) {
+  return a + x;
+}
+```
+
+📌 `addToX(2)` → output `7`, কিন্তু যদি `x` বদলে যায় (ধরো `x = 10`), তখন output `12` হয়ে যাবে।
+
+---
+
+## 📋 তুলনা (Comparison):
+
+| বিষয়          | Pure Function | Impure Function |
+| -------------- | ------------- | --------------- |
+| Output         | Always same   | May change      |
+| Side Effects   | ❌ নেই         | ✅ থাকতে পারে    |
+| Predictability | ✅ Yes         | ❌ No            |
+| Use in Redux   | ✅ বাধ্যতামূলক | ❌ নয়            |
+
+---
+
+
+---
+
+## 🔄 Mutation কী?
+
+**Mutation** মানে হচ্ছে **কোনো object বা array-র মূল (original) মানকে সরাসরি পরিবর্তন করা**।
+
+---
+
+### 🧪 উদাহরণ (Mutation):
+
+```js
+const arr = [1, 2, 3];
+arr.push(4);  // 👉 এটা mutation, কারণ মূল arr বদলে গেছে
+```
+
+---
+
+## ⚠️ Mutation কেন সমস্যা?
+
+Redux, React ইত্যাদিতে mutation সমস্যা তৈরি করতে পারে:
+
+1. **Unexpected bugs** হতে পারে
+2. **UI ঠিকমতো rerender হয় না**
+3. **Redux reducers pure function হওয়া উচিত — mutation pure-ness নষ্ট করে**
+
+---
+
+## ✅ Mutation এড়ানোর উপায় (Immutability রক্ষা):
+
+### 📌 1. **Spread Operator ব্যবহার করে:**
+
+```js
+const arr = [1, 2, 3];
+const newArr = [...arr, 4];  // ✅ mutation নয়
+```
+
+```js
+const obj = { name: "Affnan" };
+const newObj = { ...obj, age: 20 };  // ✅ নতুন object তৈরি
+```
+
+---
+
+### 📌 2. **Array Methods (যেগুলো mutation করে না):**
+
+* ✅ `map()`, `filter()`, `concat()` — এগুলো mutation করে না
+* ❌ `push()`, `splice()`, `sort()` — mutation করে
+
+**উদাহরণ:**
+
+```js
+// ✅ No mutation
+const nums = [1, 2, 3];
+const newNums = nums.map(n => n * 2);
+
+// ❌ Mutation
+nums.push(4);
+```
+
+---
+
+### 📌 3. **Immer বা Redux Toolkit ব্যবহার করা:**
+
+Redux Toolkit-এর ভিতরে **Immer.js** থাকে, যা তোমাকে দেখতে mutation-এর মতো কোড লিখতে দেয়, কিন্তু ভিতরে ভিতরে সবকিছু immutable রাখে।
+
+```js
+// Redux Toolkit Slice-এ:
+state.value += 1;  // দেখতে mutation, কিন্তু Immer এটা safe রাখে ✅
+```
+
+---
+
+## 🎯 Summary:
+
+| Mutation             | Safe Way (No Mutation)      |
+| -------------------- | --------------------------- |
+| `arr.push()`         | `[...arr, newItem]`         |
+| `obj.key = newValue` | `{ ...obj, key: newValue }` |
+| `splice()`, `sort()` | `filter()`, `map()`         |
+
+---
+
+
+
+## 🔄 Function Currying কী?
+
+**Currying** হলো এমন একটি ফাংশন প্রযুক্তি, যেখানে একবারে সব argument না নিয়ে **একটি ফাংশন একটির বেশি ফাংশন রিটার্ন করে, প্রতিটি ফাংশন একটি argument নেয়।**
+
+---
+
+### 🧠 সহজভাবে:
+
+> বড় function → ছোট ছোট function-এ ভেঙে প্রতিবার ১টা করে argument নেয়া।
+
+---
+
+## 🧪 উদাহরণ (Regular Function):
+
+```js
+function add(a, b) {
+  return a + b;
+}
+
+add(2, 3); // 👉 5
+```
+
+---
+
+## ✅ Currying Version:
+
+```js
+function add(a) {
+  return function(b) {
+    return a + b;
+  };
+}
+
+add(2)(3); // 👉 5
+```
+
+🧠 প্রথমে `a` নেয়, পরে `b` নেয়।
+
+---
+
+## ✅ Arrow Function দিয়ে Currying:
+
+```js
+const add = a => b => a + b;
+
+console.log(add(2)(3)); // 👉 5
+```
+
+---
+
+## 📌 Currying কবে ব্যবহার হয়?
+
+### ১. Reusability বাড়াতে:
+
+```js
+const add5 = add(5);   // 👉 এখন এটা একটা ফাংশন হয়ে গেল
+add5(10); // 👉 15
+```
+
+### ২. Function Composition-এ
+
+### ৩. Redux-এর middleware বা functional programming-এ
+
+---
+
+## 📚 Summary:
+
+| বিষয়          | ব্যাখ্যা                                 |
+| ------------- | ---------------------------------------- |
+| Currying      | একটি ফাংশন, যেটা একাধিক ফাংশন return করে |
+| প্রতিটি ফাংশন | একটি argument নেয়                        |
+| উপকার         | Reusability, Readability বাড়ায়           |
+| Syntax        | `const fn = a => b => c => {}`           |
+
+---
+
+### 🎯 মনে রাখো:
+
+> Currying মানে হলো — একবারে না খেয়ে একটু একটু করে খাওয়া 😄
+> এতে কোড clean এবং flexible হয়।
+
+
+---
+
+## 🔶 Redux Middleware কী?
+
+**Middleware** হলো Redux-এর **store ও reducer এর মাঝে বসে থাকা একটি ফাংশন**, যা action dispatch হওয়ার পর এবং reducer-এ যাওয়ার আগে **action-কে modify, log, বা async কাজ করতে দেয়।**
+
+---
+
+### 📦 মনে করো:
+
+Redux এর data flow এর মধ্যে middleware হলো **middleman**।
+
+```text
+User Dispatch → Middleware → Reducer → Store Update
+```
+
+---
+
+## 🧠 সহজ সংজ্ঞা:
+
+> Middleware হচ্ছে Redux এর **extra layer**, যা তোমাকে **console log, API call, condition check ইত্যাদি করতে দেয়**।
+
+---
+
+## 🧪 উদাহরণ: Simple Logging Middleware
+
+```js
+const loggerMiddleware = store => next => action => {
+  console.log('Dispatching:', action);
+  const result = next(action);
+  console.log('Next State:', store.getState());
+  return result;
+};
+```
+
+### 📌 Explanation:
+
+* `store` → Redux store access
+* `next` → পরের middleware বা reducer-এ পাঠায়
+* `action` → যেটা dispatch হয়েছে
+
+---
+
+## 🧰 Middleware ব্যবহার কোথায় হয়?
+
+### ১. Logging
+
+### ২. Async কাজ (API call)
+
+### ৩. Authentication check
+
+### ৪. Custom logic
+
+---
+
+## 🔧 Middleware কিভাবে যোগ করবো?
+
+```js
+import { configureStore } from '@reduxjs/toolkit'
+import loggerMiddleware from './loggerMiddleware'
+import counterReducer from './features/counter/counterSlice'
+
+export const store = configureStore({
+  reducer: {
+    counter: counterReducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(loggerMiddleware),
+})
+```
+
+---
+
+## ✅ Built-in Middleware:
+
+Redux Toolkit automatic ভাবে নিচের middleware দেয়:
+
+* `redux-thunk` (async কাজের জন্য)
+* `serializableCheck`
+* `immutableCheck`
+
+---
+
+## 🔄 thunk Middleware (Bonus):
+
+Thunk হলো একধরনের middleware যেটা action এর ভিতরে async function চালাতে দেয়:
+
+```js
+export const fetchData = () => async (dispatch) => {
+  const res = await fetch('/api/data')
+  const data = await res.json()
+  dispatch(setData(data))
+}
+```
+
+---
+
+## 📚 Summary:
+
+| বিষয়       | ব্যাখ্যা                         |
+| ---------- | -------------------------------- |
+| Middleware | Reducer-এর আগেই কাজ করে          |
+| কাজ        | Logging, API, condition check    |
+| Thunk      | Async middleware                 |
+| ব্যবহার    | Redux Toolkit-এ সহজে যোগ করা যায় |
 
 ---
 
