@@ -816,9 +816,6 @@ export const fetchData = () => async (dispatch) => {
 | ব্যবহার    | Redux Toolkit-এ সহজে যোগ করা যায় |
 
 ---
-`````````
-RTK QUERY :
-
 চমৎকার! এখন আমি তোমাকে **Redux Toolkit Query (RTK Query)** দিয়ে **একটা API তৈরি করার সম্পূর্ণ Step-by-Step গাইড** দেব। RTK Query হলো Redux Toolkit-এর একদম মডার্ন ও সহজ পদ্ধতি API handle করার জন্য।
 
 ---
@@ -937,6 +934,8 @@ export default App;
 | 5   | UI তে দেখাও                          |
 
 ---
+
+
 
 
 
