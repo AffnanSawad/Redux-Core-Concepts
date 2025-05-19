@@ -816,6 +816,130 @@ export const fetchData = () => async (dispatch) => {
 | ব্যবহার    | Redux Toolkit-এ সহজে যোগ করা যায় |
 
 ---
+`````````
+RTK QUERY :
+
+চমৎকার! এখন আমি তোমাকে **Redux Toolkit Query (RTK Query)** দিয়ে **একটা API তৈরি করার সম্পূর্ণ Step-by-Step গাইড** দেব। RTK Query হলো Redux Toolkit-এর একদম মডার্ন ও সহজ পদ্ধতি API handle করার জন্য।
+
+---
+
+## 🔰 Step-by-Step: Creating API using RTK Query
+
+---
+
+### 🧩 Step 1: Redux Toolkit ও RTK Query ইনস্টল করো
+
+```bash
+npm install @reduxjs/toolkit react-redux
+```
+
+(যদি React Project তৈরি না করা থাকে, `create-react-app` বা `Vite` দিয়ে তৈরি করো।)
+
+---
+
+### 🧩 Step 2: Create API Slice
+
+```js
+// src/features/api/apiSlice.js
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+export const apiSlice = createApi({
+  reducerPath: 'api',  // Redux state name
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://jsonplaceholder.typicode.com/' }),
+  endpoints: (builder) => ({
+    getPosts: builder.query({
+      query: () => 'posts', // GET /posts
+    }),
+  }),
+});
+
+export const { useGetPostsQuery } = apiSlice;
+```
+
+---
+
+### 🧩 Step 3: Store সেটআপ করো
+
+```js
+// src/app/store.js
+import { configureStore } from '@reduxjs/toolkit';
+import { apiSlice } from '../features/api/apiSlice';
+
+export const store = configureStore({
+  reducer: {
+    [apiSlice.reducerPath]: apiSlice.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(apiSlice.middleware),
+});
+```
+
+---
+
+### 🧩 Step 4: Provider দিয়ে অ্যাপ র‍্যাপ করো
+
+```js
+// src/main.jsx (Vite) অথবা src/index.js (CRA)
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import { Provider } from 'react-redux';
+import { store } from './app/store';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
+```
+
+---
+
+### 🧩 Step 5: API থেকে ডেটা ফেচ করে দেখাও
+
+```js
+// src/App.jsx
+import React from 'react';
+import { useGetPostsQuery } from './features/api/apiSlice';
+
+function App() {
+  const { data: posts, isLoading, isError } = useGetPostsQuery();
+
+  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <p>Something went wrong!</p>;
+
+  return (
+    <div>
+      <h1>Posts</h1>
+      {posts.map((post) => (
+        <div key={post.id}>
+          <h3>{post.title}</h3>
+          <p>{post.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default App;
+```
+
+---
+
+## ✅ Summary
+
+| ধাপ | কাজ                                  |
+| --- | ------------------------------------ |
+| 1   | `createApi` দিয়ে API Slice বানাও     |
+| 2   | Reducer ও Middleware Store-এ যোগ করো |
+| 3   | `Provider` দিয়ে Redux wrap করো       |
+| 4   | `useGetPostsQuery()` দিয়ে ডেটা আনো   |
+| 5   | UI তে দেখাও                          |
+
+---
+
+
+
 
 
 
