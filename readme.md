@@ -1053,7 +1053,261 @@ export default App;
 
 ---
 
+---
 
+## 🔧 API Update & Delete: Step-by-Step
+
+আমরা ধরছি `JSONPlaceholder` API ব্যবহার করছি (`https://jsonplaceholder.typicode.com/posts`), যেটা ফেক API হলেও `PUT` ও `DELETE` simulate করে।
+
+---
+
+## 🧩 Step 1: API Slice-এ `updatePost` ও `deletePost` mutation যোগ করো
+
+```js
+// src/features/api/apiSlice.js
+export const apiSlice = createApi({
+  reducerPath: 'api',
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://jsonplaceholder.typicode.com/' }),
+  tagTypes: ['Post'],
+  endpoints: (builder) => ({
+    getPosts: builder.query({
+      query: () => 'posts',
+      providesTags: ['Post'],
+    }),
+    createPost: builder.mutation({
+      query: (newPost) => ({
+        url: 'posts',
+        method: 'POST',
+        body: newPost,
+      }),
+      invalidatesTags: ['Post'],
+    }),
+    updatePost: builder.mutation({
+      query: ({ id, ...rest }) => ({
+        url: `posts/${id}`,
+        method: 'PUT',
+        body: rest,
+      }),
+      invalidatesTags: ['Post'],
+    }),
+    deletePost: builder.mutation({
+      query: (id) => ({
+        url: `posts/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Post'],
+    }),
+  }),
+});
+
+export const {
+  useGetPostsQuery,
+  useCreatePostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
+} = apiSlice;
+```
+
+---
+
+## 🧩 Step 2: UI থেকে Update ও Delete option ব্যবহার করো
+
+```js
+// src/App.jsx
+import React, { useState } from 'react';
+import {
+  useGetPostsQuery,
+  useCreatePostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
+} from './features/api/apiSlice';
+
+function App() {
+  const { data: posts, isLoading } = useGetPostsQuery();
+  const [createPost] = useCreatePostMutation();
+  const [updatePost] = useUpdatePostMutation();
+  const [deletePost] = useDeletePostMutation();
+
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [editId, setEditId] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !body) return;
+
+    if (editId) {
+      await updatePost({ id: editId, title, body }).unwrap();
+      setEditId(null);
+    } else {
+      await createPost({ title, body }).unwrap();
+    }
+
+    setTitle('');
+    setBody('');
+  };
+
+  const handleEdit = (post) => {
+    setTitle(post.title);
+    setBody(post.body);
+    setEditId(post.id);
+  };
+
+  const handleDelete = async (id) => {
+    if (confirm('Are you sure?')) {
+      await deletePost(id);
+    }
+  };
+
+  return (
+    <div>
+      <h1>RTK Query CRUD</h1>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <br />
+        <textarea
+          placeholder="Body"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        ></textarea>
+        <br />
+        <button type="submit">{editId ? 'Update' : 'Add'} Post</button>
+      </form>
+
+      <h2>Posts:</h2>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        posts?.slice(0, 10).map((post) => (
+          <div key={post.id}>
+            <strong>{post.title}</strong>
+            <p>{post.body}</p>
+            <button onClick={() => handleEdit(post)}>Edit</button>
+            <button onClick={() => handleDelete(post.id)}>Delete</button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+---
+
+## 📌 Summary
+
+| Method | কাজ            | Hook                      |
+| ------ | -------------- | ------------------------- |
+| POST   | নতুন post তৈরি | `useCreatePostMutation()` |
+| PUT    | post আপডেট     | `useUpdatePostMutation()` |
+| DELETE | post মুছা      | `useDeletePostMutation()` |
+
+---
+
+## 🧠 RTK Query CRUD Flow:
+
+1. **Create** → `createPost` (POST)
+2. **Read** → `getPosts` (GET)
+3. **Update** → `updatePost` (PUT)
+4. **Delete** → `deletePost` (DELETE)
+
+
+
+Redux Toolkit Query (RTK Query) automatically handles **caching** for your API data, making your app faster and more efficient. Let's break it down simply:
+
+---
+
+## 🧠 What is Caching?
+
+**Caching** means storing previously fetched data, so it doesn't need to be refetched every time — improving performance and reducing unnecessary network requests.
+
+---
+
+## 🧩 Caching in RTK Query (Redux)
+
+RTK Query caches API responses **automatically** when you use query endpoints.
+
+### ✅ Example:
+
+```js
+const { data, isLoading } = useGetPostsQuery();
+```
+
+➡️ The first time, `useGetPostsQuery()` sends a network request.
+➡️ Next time (within cache duration), it serves data **from cache**, not from the server.
+
+---
+
+## 🔄 Cache Lifetimes in RTK Query
+
+RTK Query gives you control over how long data stays cached.
+
+### 🔹 `keepUnusedDataFor` (default: 60 seconds)
+
+How long unused cache data is kept before being removed.
+
+```js
+getPosts: builder.query({
+  query: () => 'posts',
+  keepUnusedDataFor: 300, // keeps data for 5 minutes
+}),
+```
+
+---
+
+## 🧼 Cache Invalidation
+
+When you **create/update/delete** something, the cache may be outdated.
+
+RTK Query handles that with **tags**:
+
+```js
+tagTypes: ['Post'],
+```
+
+```js
+getPosts: builder.query({
+  query: () => 'posts',
+  providesTags: ['Post'],
+}),
+createPost: builder.mutation({
+  query: (post) => ({ url: 'posts', method: 'POST', body: post }),
+  invalidatesTags: ['Post'], // clears cached posts after mutation
+}),
+```
+
+➡️ This tells Redux: “After creating a post, refetch posts.”
+
+---
+
+## 🛠 Bonus: Force Refetching
+
+Want to ignore cache and **force refetch**?
+
+```js
+const { data } = useGetPostsQuery(undefined, { refetchOnMountOrArgChange: true });
+```
+
+---
+
+## ✅ Summary Table
+
+| Feature                     | Purpose                      |
+| --------------------------- | ---------------------------- |
+| `keepUnusedDataFor`         | Set cache time (default 60s) |
+| `providesTags`              | Declare cache data           |
+| `invalidatesTags`           | Tell when to clear cache     |
+| `refetchOnMountOrArgChange` | Force refresh                |
+
+---
 
 
 
