@@ -936,6 +936,123 @@ export default App;
 ---
 
 
+দারুণ! এখন আমি তোমাকে **RTK Query দিয়ে POST request (mutation)** করার সম্পূর্ণ প্রক্রিয়া দেখাচ্ছি — কিভাবে একটা ফর্ম থেকে ডেটা পাঠিয়ে API-তে সেভ করা যায়।
+
+---
+
+## 🔰 Step-by-Step: RTK Query দিয়ে POST (Mutation)
+
+আমরা একটি ফর্ম বানাবো, যেখানে ইউজার `title` ও `body` লিখবে এবং আমরা সেই ডেটা API-তে পাঠাবো।
+
+---
+
+### 🧩 Step 1: API Slice-এ Mutation তৈরি করো
+
+```js
+// src/features/api/apiSlice.js
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+export const apiSlice = createApi({
+  reducerPath: 'api',
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://jsonplaceholder.typicode.com/' }),
+  endpoints: (builder) => ({
+    getPosts: builder.query({
+      query: () => 'posts',
+    }),
+    createPost: builder.mutation({
+      query: (newPost) => ({
+        url: 'posts',
+        method: 'POST',
+        body: newPost,
+      }),
+    }),
+  }),
+});
+
+export const { useGetPostsQuery, useCreatePostMutation } = apiSlice;
+```
+
+---
+
+### 🧩 Step 2: ফর্ম তৈরি করে ডেটা পাঠাও
+
+```js
+// src/App.jsx
+import React, { useState } from 'react';
+import { useGetPostsQuery, useCreatePostMutation } from './features/api/apiSlice';
+
+function App() {
+  const { data: posts, isLoading } = useGetPostsQuery();
+  const [createPost] = useCreatePostMutation();
+
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !body) return;
+
+    try {
+      await createPost({ title, body }).unwrap();
+      alert('Post created!');
+      setTitle('');
+      setBody('');
+    } catch (err) {
+      console.error('Failed to save the post: ', err);
+    }
+  };
+
+  return (
+    <div>
+      <h1>RTK Query CRUD Example</h1>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <br />
+        <textarea
+          placeholder="Body"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        ></textarea>
+        <br />
+        <button type="submit">Add Post</button>
+      </form>
+
+      <h2>Posts:</h2>
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        posts?.map((post) => (
+          <div key={post.id}>
+            <strong>{post.title}</strong>
+            <p>{post.body}</p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+---
+
+## 📚 Summary:
+
+| Step                      | Task                                         |
+| ------------------------- | -------------------------------------------- |
+| `createPost` Mutation     | API Slice-এ POST রিকোয়েস্ট তৈরি              |
+| `useCreatePostMutation()` | Hook এর মাধ্যমে ফর্ম থেকে API-তে ডেটা পাঠানো |
+| `unwrap()`                | Promise handle করার জন্য                     |
+
+---
+
 
 
 
